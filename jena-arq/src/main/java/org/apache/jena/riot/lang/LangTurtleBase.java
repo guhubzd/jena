@@ -378,8 +378,8 @@ public abstract class LangTurtleBase extends LangBase {
         }
 
         Node n = node() ;
-        if ( n == null || !n.isURI() )
-            exception(t, "Expected IRI for predicate: got: %s", t) ;
+//        if ( n == null || !n.isURI() )
+//            exception(t, "Expected IRI for predicate: got: %s", t) ;
         return n ;
     }
 
