@@ -200,7 +200,7 @@ public abstract class LangTurtleBase extends LangBase {
             if ( isStrictMode() && maybeList ) {
                 if ( peekPredicate() ) {
                     predicateObjectList(n) ;
-                    expectEndOfTriples() ;
+                    //expectEndOfTriples() ;
                     return ;
                 }
                 exception(peekToken(), "Predicate/object required after (...) - Unexpected token : %s",
@@ -219,7 +219,13 @@ public abstract class LangTurtleBase extends LangBase {
 
             if ( peekPredicate() )
                 predicateObjectList(n) ;
-            expectEndOfTriples() ;
+            if ( lookingAt(EOF) )
+                return ;
+            if ( lookingAt(DOT) ) {
+                nextToken() ;
+                return ;
+            }
+            //expectEndOfTriples() ;
             //exception(peekToken(), "Unexpected token : %s", peekToken()) ;
             return ;
         }
@@ -228,7 +234,13 @@ public abstract class LangTurtleBase extends LangBase {
         if ( lookingAt(LT2) ) {
             Node subject = parseTripleTerm();
             predicateObjectList(subject) ;
-            expectEndOfTriples() ;
+            if ( lookingAt(EOF) )
+                return ;
+            if ( lookingAt(DOT) ) {
+                nextToken() ;
+                return ;
+            }
+            //expectEndOfTriples() ;
             return;
         }
 
@@ -316,7 +328,13 @@ public abstract class LangTurtleBase extends LangBase {
 
         nextToken() ;
         predicateObjectList(subject) ;
-        expectEndOfTriples() ;
+        if ( lookingAt(EOF) )
+            return ;
+        if ( lookingAt(DOT) ) {
+            nextToken() ;
+            return ;
+        }
+        //expectEndOfTriples() ;
     }
 
     // Differs between Turtle and TriG.
@@ -352,6 +370,11 @@ public abstract class LangTurtleBase extends LangBase {
 
     protected final void predicateObjectItem(Node subject) {
         Node predicate = predicate() ;
+        if (predicate == null)
+        {
+            nextToken();
+            return;
+        }
         nextToken() ;
         objectList(subject, predicate) ;
     }
@@ -361,7 +384,18 @@ public abstract class LangTurtleBase extends LangBase {
 
     /** Get predicate - maybe null for "illegal" */
     protected final Node predicate() {
+
+        if(lookingAt(COMMA)) {
+            return null;
+        }
+        if(lookingAt(SEMICOLON)) {
+            return null;
+        }
+        if(lookingAt(DOT)) {
+            return null;
+        }
         Token t = peekToken() ;
+
 
         if ( t.hasType(TokenType.KEYWORD) ) {
             Token tErr = peekToken() ;
@@ -421,6 +455,8 @@ public abstract class LangTurtleBase extends LangBase {
         for (;;) {
             // object ::=
             Node object = triplesNode() ;
+            if(object == null)
+                break;
             emitTriple(subject, predicate, object) ;
             // RDF-star annotation syntax
             if ( lookingAt(L_ANN) ) {
@@ -449,6 +485,19 @@ public abstract class LangTurtleBase extends LangBase {
             Node n = node() ;
             nextToken() ;
             return n ;
+        }
+
+        if(lookingAt(COMMA)) {
+            nextToken() ;
+            return null;
+        }
+        if(lookingAt(SEMICOLON)) {
+            nextToken() ;
+            return null;
+        }
+        if(lookingAt(DOT)) {
+            nextToken() ;
+            return null;
         }
 
         // Special words.
@@ -490,6 +539,11 @@ public abstract class LangTurtleBase extends LangBase {
             return triplesFormula() ;
         if ( lookingAt(LPAREN) )
             return triplesList() ;
+        if (lookingAt(SEMICOLON))
+            return null;
+
+        if (lookingAt(EOF))
+            return null;
         exception(peekToken(), "Unrecognized (expected an RDF Term): " + peekToken()) ;
         return null ;
     }
@@ -533,8 +587,11 @@ public abstract class LangTurtleBase extends LangBase {
             // The value.
             Node n = triplesNode() ;
 
-            if ( n == null )
-                exception(errorToken, "Malformed list") ;
+            if ( n == null ) {
+             //   exception(errorToken, "Malformed list");
+                //nextToken();
+                continue;
+            }
 
             // Node for the list structure.
             Node nextCell = NodeFactory.createBlankNode() ;
